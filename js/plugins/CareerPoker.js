@@ -72,7 +72,6 @@ var Scene_CareerPoker;
 				var c = data.val();
 				if (c instanceof Array) for (var b of c) b.toString = Card.prototype.toString;
 				this.putCards(c);
-				this._turnIndex++;
 				if (this._turnIndex === this._playerCount) this._turnIndex = 0;
 			}.bind(this));
 
@@ -145,6 +144,8 @@ var Scene_CareerPoker;
 		}
 
 		flush() {
+			this._turnIndex = this._putIndex;
+			this._putIndex = undefined;
 			this._handWindow.setEasing('easeOutQuad');
 			this._tableState.tableCards.forEach(function(cards) {
 				cards.forEach(function(card) {
@@ -164,6 +165,8 @@ var Scene_CareerPoker;
 
 		putCards(putCards) {
 			if (putCards.length) {
+				this._putIndex = this._turnIndex;
+				this._turnIndex++;
 				this._tableState.tableCards.push(putCards);
 				var offsetX = 300 + Math.randomInt(30);
 				var offsetY = 150 + Math.randomInt(30);
@@ -178,7 +181,10 @@ var Scene_CareerPoker;
 				}
 				this.afterPut();
 			} else {
-				this.flush();
+				var next = this._turnIndex + 1;
+				if (next === this._playerCount) next = 0;
+				this._turnIndex++;
+				if (next === this._putIndex) this.flush();
 			}
 		}
 
