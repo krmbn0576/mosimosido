@@ -7,7 +7,7 @@ var $plugins =
 {"name":"DevToolsManage","status":true,"description":"デベロッパツール管理プラグイン","parameters":{"開始時に起動":"ON","常に前面表示":"OFF","デベロッパツール表示位置":"0,0,800,600","最小化切替キー":"F8","リロードキー":"F12","画面の左寄せキー":"","高速化切替キー":"","強制戦闘勝利キー":"","スクリプト実行キー":"","フリーズキー":"","FPS表示":"OFF","タイトルカット":"OFF","高速開始":"OFF","高速スピード":"2","モバイル偽装":"OFF","メニューバー表示":"ON","クリックメニュー":"-1"}},
 {"name":"DataCacheBlocker","status":true,"description":"キャッシュを阻止します。（dataフォルダのみ）","parameters":{}},
 {"name":"MakeScreenCapture","status":true,"description":"画面キャプチャ管理プラグイン","parameters":{"PNGキャプチャキー":"F6","JPEGキャプチャキー":"F7","WEBPキャプチャキー":"F10","ファイル名":"image","出力場所":"/captures","保存形式":"png","連番桁数":"2","タイムスタンプ":"ON","署名":"","署名サイズ":"22","署名画像":"","実行間隔":"0","効果音":"Flash1"}},
-{"name":"DrawAsync","status":true,"description":"draw系のメソッドを非同期で確実に成功させます。","parameters":{}},
+{"name":"DrawAsync","status":true,"description":"draw系のメソッドをロード後に実行します。","parameters":{}},
 {"name":"StartPlayerRandom","status":true,"description":"スタート時のプレイヤーをランダムに選びます。","parameters":{}},
 {"name":"TMAutoNewGame","status":true,"description":"起動時に自動ではじめからゲームを開始します。\r\nWeb用ミニゲームなど、タイトルが不要な場合に使えます。","parameters":{"autoNewGame":"1","allwaysOnTop":"0","autoDevTool":"0"}},
 {"name":"HelpWindow","status":true,"description":"いつでもヘルプを表示/非表示します。","parameters":{}},

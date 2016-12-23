@@ -4,7 +4,7 @@
 //=============================================================================
 
 /*:
- * @plugindesc draw系のメソッドを非同期で確実に成功させます。
+ * @plugindesc draw系のメソッドをロード後に実行します。
  * @author くらむぼん
  *
  * @help
@@ -15,6 +15,12 @@
 
 (function() {
 	'use strict';
+	Bitmap.prototype.drawTextAsync = function(text, x, y, maxWidth, lineHeight, align) {
+		this.addLoadListener(function() {
+			this.drawText(text, x, y, maxWidth, lineHeight, align);
+		}.bind(this));
+	};
+
 	Window_Base.prototype.drawFaceAsync = function(faceName, faceIndex, x, y, width, height) {
 		ImageManager.loadFace(faceName).addLoadListener(function() {
 			this.drawFace(faceName, faceIndex, x, y, width, height);

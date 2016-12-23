@@ -103,7 +103,7 @@
 			var lastVolume = se.volume;
 			var lastPan = se.pan;
 			adjust(se, this);
-			if (se.volume >= cutoff) AudioManager.playSe(se);
+			if (se.volume >= cutoff) AudioManager.playSe(se, true);
 			se.volume = lastVolume;
 			se.pan = lastPan;
 		}
@@ -120,6 +120,17 @@
 			}.bind(this));
 		}
 		else updateParameters(this._currentBgs, $gameMap.event($gameSystem._bgsSource));
+	};
+
+	var _AudioManager_playSe = AudioManager.playSe;
+	AudioManager.playSe = function(se, ok) {
+		if (ok) return _AudioManager_playSe.apply(this, arguments);
+		var lastVolume = se.volume;
+		var lastPan = se.pan;
+		adjust(se, this);
+		if (se.volume >= cutoff) _AudioManager_playSe.apply(this, arguments);
+		se.volume = lastVolume;
+		se.pan = lastPan;
 	};
 
 	var _Game_Map_update = Game_Map.prototype.update;
@@ -146,6 +157,9 @@
 						$gameSystem._bgsSources[$gameSystem.getBgsLine()] = eventId;
 					}
 					else $gameSystem._bgsSource = eventId;
+					break;
+				case 'se':
+					$gameSystem._seSource = eventId;
 					break;
 				default:
 					break;

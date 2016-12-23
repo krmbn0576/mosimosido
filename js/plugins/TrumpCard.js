@@ -63,6 +63,12 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			}
 			return object;
 		}
+
+		static rebirth(array) {
+			for (var i = 0; i < array.length; i++) {
+				array[i] = new Card(array[i].suit, array[i].rank);
+			}
+		}
 	}
 
 	Card.suitToString = {
@@ -85,9 +91,12 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			var bitmap = ImageManager.loadBitmap('img/trump/', filename, 0, true);
 			super.initialize(bitmap);
 			this.scale.set(0.5, 0.5);
-			this.visible = false;
 			this.selected = false;
 			this._picture = new Game_Picture();
+			var theta = 2 * Math.PI * Math.random();
+			var x = (Graphics.boxWidth - 100) / 2 + Math.cos(theta) * 600;
+			var y = (Graphics.boxHeight - 150) / 2 + Math.sin(theta) * 600;
+			this.move(x, y, 1);
 		}
 
 		update() {
@@ -126,18 +135,15 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			this.activate();
 
 			var bitmap = ImageManager.loadBitmap('img/trump/btn_', 'orange', 0, true);
-			bitmap.addLoadListener(function() {
-				bitmap.drawText('出す(パス)', 0, 0, 200, 50, 'center');
-			});
-			this._turnEndButton = new Sprite_Button();
-			this._turnEndButton.bitmap = bitmap;
-			this._turnEndButton.move(550, height + 20);
-			this.addChild(this._turnEndButton);
+			bitmap.drawTextAsync('出す(パス)', 0, 0, 200, 50, 'center');
+			this._putCardsButton = new Sprite_Button();
+			this._putCardsButton.bitmap = bitmap;
+			this._putCardsButton.move(550, height + 20);
+			this.addChild(this._putCardsButton);
 		}
 
-		setCards(cards, immediate) {
+		setCards(cards) {
 			this._cards = cards;
-			this._immediate = immediate;
 			this.setEasing('easeOutQuad');
 			this.refresh();
 		}
@@ -159,9 +165,9 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			this.setCards(this._cards);
 		}
 
-		setTurnEndHandler(onTurnEnd) {
-			this.setHandler('cancel', onTurnEnd);
-			this._turnEndButton.setClickHandler(onTurnEnd);
+		setPutCardsHandler(onPutCards) {
+			this.setHandler('cancel', onPutCards);
+			this._putCardsButton.setClickHandler(onPutCards);
 		}
 
 		windowWidth() {
@@ -200,8 +206,7 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			var sprite = this.cardSprite(index);
 			var rect = this.itemRect(index);
 			this._cardSprites.addChild(sprite);
-			this.cardMove(sprite, rect.x, 20, this._immediate ? 1 : 10);
-			sprite.visible = true;
+			this.cardMove(sprite, rect.x, 20, 10);
 		}
 
 		isOkEnabled() {
@@ -217,7 +222,7 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			this.activate();
 		}
 
-		onTurnEnd(canPut) {
+		onPutCards(canPut) {
 			if (canPut) {
 				SoundManager.playOk();
 				var restCards = this._cards.filter(function(card) {
@@ -276,7 +281,6 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 
 		processCancel() {
 			this.updateInputData();
-			this.deactivate();
 			this.callCancelHandler();
 		}
 
@@ -286,12 +290,12 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 
 		onChatExpand() {
 			this.deactivate();
-			this._turnEndButton.visible = false;
+			this._putCardsButton.visible = false;
 		}
 
 		onChatCompact() {
 			this.activate();
-			this._turnEndButton.visible = true;
+			this._putCardsButton.visible = true;
 		}
 	}
 })();

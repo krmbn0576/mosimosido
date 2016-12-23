@@ -112,8 +112,11 @@ var Window_Chat, Window_Player;
 				}
 			}
 			else if (this._isExpanded && !Input.form_mode) {
-				if (v(3)) SceneManager._scene._chatRef.push(v(3));//this.pushLog(v(3));
-				v(3, 0);
+				if (v(3)) {
+					if (this._onChat) this._onChat(v(3));
+					else this.pushLog(v(3));
+					v(3, 0);
+				}
 				if (!this._keepExpand) this.compact();
 			}
 		}
@@ -122,9 +125,8 @@ var Window_Chat, Window_Player;
 			return Window_Selectable.prototype.isTouchedInsideFrame.call(this);
 		}
 
-		setChatHandler(onExpand, onCompact) {
-			this._onExpand = onExpand;
-			this._onCompact = onCompact;
+		setChatHandler(onChat) {
+			this._onChat = onChat;
 		}
 
 		setWindowHandler(window) {
@@ -150,6 +152,10 @@ var Window_Chat, Window_Player;
 			this._player = null;
 			this.contents.clear();
 			this.close();
+		}
+
+		player() {
+			return this._player;
 		}
 
 		refresh() {
