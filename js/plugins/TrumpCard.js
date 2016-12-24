@@ -93,10 +93,6 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			this.scale.set(0.5, 0.5);
 			this.selected = false;
 			this._picture = new Game_Picture();
-			var theta = 2 * Math.PI * Math.random();
-			var x = (Graphics.boxWidth - 100) / 2 + Math.cos(theta) * 600;
-			var y = (Graphics.boxHeight - 150) / 2 + Math.sin(theta) * 600;
-			this.move(x, y, 1);
 		}
 
 		update() {
@@ -116,9 +112,21 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 	Sprite_Cardset = class extends Sprite {
 		initialize() {
 			super.initialize();
-			Card.deck().forEach(function(card) {
+			this._deck = Card.deck();
+			this._deck.forEach(function(card) {
 				this[card] = new Sprite_Card(card);
 				this.addChild(this[card]);
+			}, this);
+			this.reset();
+		}
+
+		reset() {
+			this._deck.forEach(function(card) {
+				var theta = 2 * Math.PI * Math.random();
+				var x = (Graphics.boxWidth - 100) / 2 + Math.cos(theta) * 600;
+				var y = (Graphics.boxHeight - 150) / 2 + Math.sin(theta) * 600;
+				this[card].move(x, y, 1);
+				this[card].selected = false;
 			}, this);
 		}
 	}

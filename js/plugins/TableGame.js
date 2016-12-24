@@ -99,7 +99,6 @@ var Window_Chat, Window_Player;
 					this.compact();
 				}
 			}
-			else if (Input.isTriggered('shift')) SceneManager.pop();
 			else if (TouchInput.isTriggered()) {
 				if (this.isTouchedInsideFrame()) {
 					if (!this._isExpanded) {
