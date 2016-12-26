@@ -287,7 +287,17 @@ var Scene_CareerPoker;
 			var tableCards = this._tableState && this._tableState.tableCards;
 			var lastCards = tableCards && tableCards[tableCards.length - 1];
 			if (lastCards) {
-				this.chatSystem('決着！(決まり手：%1)'.format(this.showCards(lastCards)));
+				var result;
+				if (this._restCards[this._myIndex] === 0) {
+					result = '勝利！';
+					BattleManager.playVictoryMe();
+				} else if (this._restCards[this._myIndex] > 0) {
+					result = '敗北…';
+					BattleManager.playDefeatMe();
+				} else {
+					result = '決着！';
+				}
+				this.chatSystem('%1(決まり手：%2)'.format(result, this.showCards(lastCards)));
 			}
 			if (this._myIndex === 0) {
 				this._dealRef.remove();

@@ -18,6 +18,6 @@
 	hook(DataManager, 'setupNewGame', function() {
 		var origin = arguments[arguments.length - 1];
 		origin.apply(this, arguments);
-		$gameActors.actor(1).setCharacterImage(''/*'2000actor' + (Math.randomInt(4) + 1)*/, Math.randomInt(8));
+		$gameActors.actor(1).setCharacterImage('2000actor' + (Math.randomInt(4) + 1), Math.randomInt(8));
 	});
 })();
