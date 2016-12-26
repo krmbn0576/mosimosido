@@ -99,8 +99,8 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			super.update();
 			this._picture.update();
 			if (this.visible) {
-				this.x = Math.floor(this._picture.x());
-				this.y = Math.floor(this._picture.y());
+				this.x = Math.round(this._picture.x());
+				this.y = Math.round(this._picture.y());
 			}
 		}
 
@@ -141,12 +141,7 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			this.refresh();
 			this.select(0);
 			this.activate();
-
-			var bitmap = ImageManager.loadBitmap('img/trump/btn_', 'orange', 0, true);
-			bitmap.drawTextAsync('出す(パス)', 0, 0, 200, 50, 'center');
-			this._putCardsButton = new Sprite_Button();
-			this._putCardsButton.bitmap = bitmap;
-			this._putCardsButton.move(550, height + 20);
+			this._putCardsButton = new Sprite_TextButton('orange', '出す(パス)', 550, height + 20);
 			this.addChild(this._putCardsButton);
 		}
 
@@ -214,11 +209,15 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 			var sprite = this.cardSprite(index);
 			var rect = this.itemRect(index);
 			this._cardSprites.addChild(sprite);
-			this.cardMove(sprite, rect.x, 20, 10);
+			this.cardMove(sprite, rect.x, sprite.selected ? 0 : 20, 10);
 		}
 
 		isOkEnabled() {
 			return this._cards.length;
+		}
+
+		isCurrentItemEnabled() {
+			return this.index() >= 0;
 		}
 
 		callOkHandler() {
@@ -257,12 +256,6 @@ var Card, Sprite_Card, Sprite_Cardset, Window_Hand;
 				if (triggered && this.isTouchOkEnabled()) {
 					this.select(hitIndex);
 					this.processOk();
-				}
-			} else if (this._stayCount >= 10) {
-				if (y < this.padding) {
-					this.cursorUp();
-				} else if (y >= this.height - this.padding) {
-					this.cursorDown();
 				}
 			}
 		}

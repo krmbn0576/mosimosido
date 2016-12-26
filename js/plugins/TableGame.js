@@ -13,10 +13,20 @@
  * ご自由にお使いください。
  */
 
-var Window_Chat, Window_Player;
+var Sprite_TextButton, Window_Chat, Window_Player;
 
 (function() {
 	'use strict';
+	Sprite_TextButton = class extends Sprite_Button {
+		initialize(color, text, x, y) {
+			var bitmap = ImageManager.loadBitmap('img/trump/btn_', color, 0, true);
+			bitmap.drawTextAsync(text, 0, 0, 200, 50, 'center');
+			super.initialize();
+			this.bitmap = bitmap;
+			this.move(x, y);
+		}
+	}
+
 	Window_Chat = class extends Window_Base {
 		initialize(rect, exRect) {
 			super.initialize(rect.x, rect.y, exRect.width, exRect.height);
@@ -28,6 +38,19 @@ var Window_Chat, Window_Player;
 			this._logMax = (exRect.height - this.padding * 2) / this.lineHeight();
 			this._isExpanded = false;
 			this._keepExpand = false;
+			this._s = 5;
+			this._v = 3;
+			this.v(0);
+		}
+
+		s(value) {
+			if (arguments.length >= 1) return s(this._s, value);
+			else return s(this._s);
+		}
+
+		v(value) {
+			if (arguments.length >= 1) return v(this._v, value);
+			else return v(this._v);
 		}
 
 		pushLog(message) {
@@ -51,9 +74,9 @@ var Window_Chat, Window_Player;
 		}
 
 		openChat() {
-			s(5, false);
-			var str = 'x=%1;y=%2;v=3;max=28;if_s=5;btn_x=%3;btn_y=0;';
-			var args = [str.format(this._rect.x + 20, this._rect.y + 20, 24 * 16)];
+			this.s(false);
+			var str = 'x=%1;y=%2;v=%3;max=28;if_s=%4;btn_x=384;btn_y=0;';
+			var args = [str.format(this._rect.x + 20, this._rect.y + 20, this._v, this._s)];
 			$gameMap._interpreter.pluginCommand('InputForm', args);
 			this.expand();
 		}
@@ -89,7 +112,8 @@ var Window_Chat, Window_Player;
 
 		update() {
 			super.update();
-			if (Input.isTriggered('chat')) this.openChat();
+			if (!this.active) return;
+			else if (Input.isTriggered('chat')) this.openChat();
 			else if (Input.isTriggered('log')) {
 				if (!this._isExpanded) {
 					this._keepExpand = true;
@@ -98,26 +122,32 @@ var Window_Chat, Window_Player;
 					this._keepExpand = false;
 					this.compact();
 				}
-			}
-			else if (TouchInput.isTriggered()) {
+			} else if (TouchInput.isTriggered()) {
 				if (this.isTouchedInsideFrame()) {
 					if (!this._isExpanded) {
 						this._keepExpand = true;
 						this.openChat();
 					} else {
-						s(5, true);
+						this._keepExpand = false;
+						this.s(true);
 						this.compact();
 					}
 				}
-			}
-			else if (this._isExpanded && !Input.form_mode) {
-				if (v(3)) {
-					if (this._onChat) this._onChat(v(3));
-					else this.pushLog(v(3));
-					v(3, 0);
+			} else if (this._isExpanded && !Input.form_mode) {
+				if (this.v()) {
+					if (this._onChat) this._onChat(this.v());
+					else this.pushLog(this.v());
+					this.v(0);
 				}
 				if (!this._keepExpand) this.compact();
 			}
+		}
+
+		deactivate() {
+			super.deactivate();
+			this._keepExpand = false;
+			this.s(true);
+			this.compact();
 		}
 
 		isTouchedInsideFrame() {
@@ -151,10 +181,6 @@ var Window_Chat, Window_Player;
 			this._player = null;
 			this.contents.clear();
 			this.close();
-		}
-
-		player() {
-			return this._player;
 		}
 
 		refresh() {

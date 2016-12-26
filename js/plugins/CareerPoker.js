@@ -21,23 +21,18 @@ var Scene_CareerPoker;
 		create() {
 			super.create();
 			this._cardSprites = new Sprite_Cardset();
+			this.eightToRight();
 			this.addChild(this._cardSprites);
 			this._handWindow = new Window_Hand(this._cardSprites, 0, 330);
 			this._handWindow.setPutCardsHandler(this.putCards.bind(this));
 			this.addWindow(this._handWindow);
-
-			var bitmap = ImageManager.loadBitmap('img/trump/btn_', 'green', 0, true);
-			bitmap.drawTextAsync('始める', 0, 0, 200, 50, 'center');
-			this._startButton = new Sprite_Button();
-			this._startButton.bitmap = bitmap;
-			this._startButton.move(314, 260);
-			this._startButton.setClickHandler(this.deal.bind(this));
-			this._startButton.visible = false;
-			this.addChild(this._startButton);
+			this._startButton = this.createButton('green', '始める', 314, 260, 'deal');
+			this._endButton = this.createButton('red', '退出する', 550, 260, 'popScene');
 
 			var points = [0, 200, 50, 50, 466, 50, 516, 200];
 			this._playerWindows = [];
-			for (var i = 0; i < 4; i++) {
+			this._playerCount = 4;
+			for (var i = 0; i < this._playerCount; i++) {
 				this._playerWindows[i] = new Window_Player(points[i * 2], points[i * 2 + 1]);
 				this.addWindow(this._playerWindows[i]);
 			}
@@ -52,8 +47,21 @@ var Scene_CareerPoker;
 			this._gameEndWindow = new Window_GameEnd();
 			this._gameEndWindow.close();
 			this._gameEndWindow.setHandler('toTitle', this.popScene.bind(this));
-			this._gameEndWindow.setHandler('cancel', function() {this._gameEndWindow.close();}.bind(this));
+			this._gameEndWindow.setHandler('cancel', function() {
+				this._chatLogWindow.activate();
+				this._handWindow.onChatCompact();
+				this._gameEndWindow.close();
+				this._gameEndWindow.deactivate();
+			}.bind(this));
 			this.addChild(this._gameEndWindow);
+		}
+
+		createButton(color, text, x, y, method) {
+			var button = new Sprite_TextButton(color, text, x, y);
+			button.setClickHandler(this[method].bind(this));
+			button.visible = false;
+			this.addChild(button);
+			return button;
 		}
 
 		isReady() {
@@ -61,34 +69,15 @@ var Scene_CareerPoker;
 		}
 
 		start() {
-			this._starting = false;
 			this._playing = false;
-			this._turnIndex = 0;
-			this._putIndex = null;
-			this._myIndex = null;
 
-			this._roomRef = firebase.database().ref('rooms').child('0');
+			this._roomRef = firebase.database().ref('rooms').child('1');
 			this._usersRef = this._roomRef.child('users');
 			this._selfRef = this._usersRef.push();
-			this._cardRef = this._roomRef.child('card');
 			this._dealRef = this._roomRef.child('deal');
+			this._cardRef = this._roomRef.child('card');
 			this._chatRef = this._roomRef.child('chat');
 			this._connectedRef = firebase.database().ref('.info/connected');
-
-			this._usersRef.on('value', function(data) {
-				this._users = data.val();
-				if (!this._playing) this.placePlayers();
-				else {
-					var i = 0;
-					for (var k in this._users) {
-						if (this._realPlayers.contains(this._users[k].id)) i++;
-					}
-					if (i < this._playerCount) {
-						this.clean();
-						this.chatSystem('ゲームが破綻しました…（ごめんね）');
-					}
-				}
-			}, this);
 
 			this._dealRef.on('value', this.onDeal, this);
 			this._cardRef.on('child_added', this.onPutCards, this);
@@ -99,6 +88,7 @@ var Scene_CareerPoker;
 				this._chatRef.push(message);
 			}.bind(this));
 			this._connectedRef.on('value', this.onConnected, this);
+			this._usersRef.on('value', this.onUsers, this);
 
 			this._selfRef.onDisconnect().remove();
 			var id = OnlineManager.user.uid;
@@ -109,23 +99,53 @@ var Scene_CareerPoker;
 		}
 
 		chatSystem(message) {
-			this._chatLogWindow.pushLog('\\C[6]' + message);
+			this._chatLogWindow.pushLog('\\C[6]' + message + '\\C[0]');
+		}
+
+		chatWarning(message) {
+			this._chatLogWindow.pushLog('\\C[1]' + message + '\\C[0]');
 		}
 
 		update() {
-			if (Input.isTriggered('shift')) {
-				this._gameEndWindow.open();
-				this._gameEndWindow.activate();
+			if (!this._gameEndWindow.isOpenAndActive()) {
+				if (Input.isTriggered('ok') && this._startButton.visible) {
+					this._startButton.callClickHandler();
+					this._handWindow.updateInputData();
+				}
+				if (Input.isTriggered('escape') && this._endButton.visible) {
+					this._endButton.callClickHandler();
+				}
+				if (Input.isTriggered('shift')) {
+					this._chatLogWindow.deactivate();
+					this._handWindow.onChatExpand();
+					this._gameEndWindow.open();
+					this._gameEndWindow.activate();
+				}
 			}
 			super.update();
 		}
 
+		onUsers(data) {
+			this._users = data.val();
+			if (!this._users) {
+				this._dealRef.remove();
+				this._cardRef.remove();
+				this._chatRef.remove();
+				return;
+			}
+			if (!this._playing) this.placePlayers();
+		}
+
 		placePlayers() {
-			var i = 0;
-			this._realPlayers = [];
-			for (var key in this._users) {
-				if (this._users[key].id === OnlineManager.user.uid) {
-					this._myIndex = i;
+			if (!this._users) return;
+			var keys = Object.keys(this._users);
+			for (var i = 0; i < this._playerCount; i++) {
+				var user = this._users[keys[i]];
+				if (!user) {
+					this._playerWindows[i].remove();
+					continue;
+				}
+				if (user.id === OnlineManager.user.uid) {
 					if (i === 0) {
 						this._dealRef.onDisconnect().remove();
 						this._cardRef.onDisconnect().remove();
@@ -138,12 +158,8 @@ var Scene_CareerPoker;
 						this._startButton.visible = false;
 					}
 				}
-				this._realPlayers[i] = this._users[key].id;
-				this._playerWindows[i++].setup(this._users[key]);
-				if (i === 4) break;
+				this._playerWindows[i].setup(user);
 			}
-			this._playerCount = i;
-			while (i < 4) this._playerWindows[i++].remove();
 		}
 
 		onConnected(data) {
@@ -153,6 +169,14 @@ var Scene_CareerPoker;
 
 		terminate() {
 			super.terminate();
+			if (this._myRef) {
+				this._myRef.onDisconnect().cancel();
+				this._myRef.remove();
+				this._myRef = null;
+			}
+			this._dealRef.onDisconnect().cancel();
+			this._cardRef.onDisconnect().cancel();
+			this._chatRef.onDisconnect().cancel();
 			this._selfRef.onDisconnect().cancel();
 			this._selfRef.remove();
 			this._usersRef.off();
@@ -165,17 +189,34 @@ var Scene_CareerPoker;
 		deal() {
 			this._startButton.visible = false;
 			var deck = Card.shuffle(Card.deck());
-			var cards = [];
-			for (var i = 0; i < this._playerCount; i++) {
-				cards.push(Card.deal(deck, 13));
+			var gameInfo = [];
+			var keys = Object.keys(this._users);
+			for (var i = 0; i < keys.length && i < this._playerCount; i++) {
+				gameInfo.push({user: this._users[keys[i]], cards: Card.deal(deck, 13)});
 			}
-			this._dealRef.set(cards);
+			this._dealRef.set(gameInfo);
 		}
 
 		onDeal(data) {
-			var dealCards = data.val();
-			if (dealCards) {
+			var value = data.val();
+			if (value) {
+				this._players = value.map(function(x) {return x.user});
+				if (this._playing) {
+					for (var i = 0; i < this._playerCount; i++) {
+						var user = this._players[i];
+						if (!user) {
+							this._restCards[i] = -1;
+							var next = next || i === this._turnIndex;
+						}
+					}
+					if (next) this.nextTurn();
+					this.refreshPlayers();
+					return;
+				}
+				var dealCards = value.map(function(x) {return x.cards});
+				this._endButton.visible = false;
 				this._turnIndex = 0;
+				this._passCount = 0;
 				this._playing = true;
 				this._tableState = {
 					revolution: false,
@@ -184,24 +225,25 @@ var Scene_CareerPoker;
 					sequence: false,
 					tableCards: [],
 				};
-				if (this._starting && this._myIndex < 4) {
+				var playerIDs = this._players.map(function(x) {return x.id});
+				this._myIndex = playerIDs.indexOf(OnlineManager.user.uid);
+				if (this._myIndex >= 0) {
 					var cards = dealCards[this._myIndex];
 					Card.rebirth(cards);
 					cards.sort(this.comparer.bind(this));
 					this._handWindow.setCards(cards);
+					this._myRef = this._dealRef.child(this._myIndex);
+					this._myRef.onDisconnect().remove();
 				}
 				this._restCards = [];
 				for (var i = 0; i < this._playerCount; i++) {
-					this._restCards.push(13);
+					this._restCards.push(i < dealCards.length ? 13 : -1);
 				}
 				this.refreshPlayers();
 			} else this.clean();
-			this._starting = true;
 		}
 
 		flush() {
-			this._turnIndex = this._putIndex;
-			this._putIndex = null;
 			this._handWindow.setEasing('easeOutQuad');
 			this._tableState.tableCards.forEach(function(cards) {
 				cards.forEach(function(card) {
@@ -221,18 +263,17 @@ var Scene_CareerPoker;
 
 		refreshPlayers() {
 			for (var i = 0; i < this._playerCount; i++) {
-				var str = '残り' + this._restCards[i] + '枚';
-				if (this._turnIndex === i) str += '　手番';
-				this._playerWindows[i].player().other = str;
-				this._playerWindows[i].refresh();
+				var player = this._players[i];
+				if (player) {
+					var str = '残り' + this._restCards[i] + '枚';
+					if (this._turnIndex === i) str += '　手番';
+					player.other = str;
+					this._playerWindows[i].setup(player);
+				} else this._playerWindows[i].remove();
 			}
-			if (this._playerCount === 1) {
-				if (this._restCards[0] === 0) this.clean();
-			} else {
-				var zero = this._restCards.filter(function(r) {return r === 0;});
-				if (zero.length === this._playerCount - 1) {
-					this.clean();
-				}
+			var zero = this._restCards.filter(function(r) {return r === 0;});
+			if (zero.length === this._playerCount - 1) {
+				this.clean();
 			}
 		}
 
@@ -242,12 +283,26 @@ var Scene_CareerPoker;
 				this._cardRef.remove();
 				this._startButton.visible = true;
 			}
+			if (this._myRef) {
+				this._myRef.onDisconnect().cancel();
+				this._myRef = null;
+			}
+			this._endButton.visible = true;
 			this._playing = false;
 			this._handWindow.setCards([]);
 			this._handWindow.deselect();
 			this._cardSprites.reset();
+			this.eightToRight();
 			this.placePlayers();
-			this.chatSystem('ゲーム終了！(Shiftで退出)');
+		}
+
+		eightToRight() {
+			['spade', 'diamond', 'club', 'heart'].forEach(function(suit) {
+				var theta = Math.random() - 0.5;
+				var x = (Graphics.boxWidth - 100) / 2 + Math.cos(theta) * 600;
+				var y = (Graphics.boxHeight - 150) / 2 + Math.sin(theta) * 600;
+				this._cardSprites[new Card(suit, 8)].move(x, y, 1);
+			}, this);
 		}
 
 		onPutCards(data) {
@@ -256,7 +311,7 @@ var Scene_CareerPoker;
 			var putCards = value.cards;
 			if (putCards) {
 				Card.rebirth(putCards);
-				this._putIndex = this._turnIndex;
+				this._passCount = 0;
 				this._tableState.tableCards.push(putCards);
 				var offsetX = 300 + Math.randomInt(30);
 				var offsetY = 150 + Math.randomInt(30);
@@ -270,25 +325,31 @@ var Scene_CareerPoker;
 				}
 				this.afterPut();
 			}
-			if (this._putIndex !== null && this._playerCount >= 2) {
-				do {
-					this._turnIndex++;
-					if (this._turnIndex === this._playerCount) this._turnIndex = 0;
-				} while (this._restCards[this._turnIndex] === 0);
-			}
-			if (!putCards && this._turnIndex === this._putIndex) this.flush();
+			this.nextTurn();
+			if (this._passCount >= this._playerCount) this.flush();
 			this.refreshPlayers();
 		}
 
+		nextTurn() {
+			var startIndex = this._turnIndex;
+			do {
+				this._turnIndex++;
+				this._passCount++;
+				if (this._turnIndex === this._playerCount) this._turnIndex = 0;
+				if (startIndex === this._turnIndex) break;
+			} while (this._restCards[this._turnIndex] <= 0);
+		}
+
 		putCards() {
-			if (this._playing && this._turnIndex === this._myIndex) {
+			if (this._turnIndex === this._myIndex) {
 				var putCards = this._handWindow.putCards();
 				var canPut = this.canPut(putCards);
 				this._handWindow.onPutCards(canPut);
 				if (canPut) {
-					this._handWindow.select(0);
+					var count = putCards.length;
 					var rest = this._restCards[this._myIndex];
-					rest -= putCards.length;
+					if (count > 0) this._handWindow.select(0);
+					rest -= count;
 					this._cardRef.push({rest: rest, cards: putCards});
 				}
 			}
@@ -306,11 +367,7 @@ var Scene_CareerPoker;
 					case 2:
 						return this.cardSame(putCards);
 					default:
-						var same = this.cardSame(putCards);
-						if (same) return true;
-						var seq = this.cardSeq(putCards);
-						if (seq) this._tableState.sequence = true;
-						return seq;
+						return this.cardSame(putCards) || this.cardSeq(putCards);
 				}
 			}
 			// 場札がある時はパスできる
@@ -382,11 +439,17 @@ var Scene_CareerPoker;
 				if (sp3 && last2Cards[0].suit === 'joker' && lastCards.length === 1) {
 					this._tableState.lockSuit = null;
 				}
+			} else {
+				// 階段
+				this._tableState.sequence = !this.cardSame(lastCards) && this.cardSeq(lastCards);
 			}
 			if (!this._tableState.sequence) {
 				var rank = lastCards[0].rank;
 				// 八切り
-				if (rank === 8) this.flush();
+				if (rank === 8) {
+					this._passCount = this._playerCount;
+					this._turnIndex--;
+				}
 				// Ｊバック
 				else if (rank === 11) this._tableState.elevenBack = true;
 			}

@@ -103,7 +103,7 @@
 			var lastVolume = se.volume;
 			var lastPan = se.pan;
 			adjust(se, this);
-			if (se.volume >= cutoff) AudioManager.playSe(se, true);
+			if (se.volume >= cutoff) _AudioManager_playSe.call(AudioManager, se);
 			se.volume = lastVolume;
 			se.pan = lastPan;
 		}
@@ -123,14 +123,16 @@
 	};
 
 	var _AudioManager_playSe = AudioManager.playSe;
-	AudioManager.playSe = function(se, ok) {
-		if (ok) return _AudioManager_playSe.apply(this, arguments);
-		var lastVolume = se.volume;
-		var lastPan = se.pan;
-		adjust(se, this);
-		if (se.volume >= cutoff) _AudioManager_playSe.apply(this, arguments);
-		se.volume = lastVolume;
-		se.pan = lastPan;
+	AudioManager.playSe = function(se) {
+		var source = $gameMap.event($gameSystem._seSource);
+		if (source) {
+			var lastVolume = se.volume;
+			var lastPan = se.pan;
+			adjust(se, source);
+			if (se.volume >= cutoff) _AudioManager_playSe.apply(this, arguments);
+			se.volume = lastVolume;
+			se.pan = lastPan;
+		} else _AudioManager_playSe.apply(this, arguments);
 	};
 
 	var _Game_Map_update = Game_Map.prototype.update;
