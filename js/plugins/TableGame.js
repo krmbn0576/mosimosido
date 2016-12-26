@@ -134,9 +134,11 @@ var Sprite_TextButton, Window_Chat, Window_Player;
 					}
 				}
 			} else if (this._isExpanded && !Input.form_mode) {
-				if (this.v()) {
-					if (this._onChat) this._onChat(this.v());
-					else this.pushLog(this.v());
+				var message = this.v();
+				if (message) {
+					message = $gameParty.name() + ':' + message;
+					if (this._onChat) this._onChat(message);
+					else this.pushLog(message);
 					this.v(0);
 				}
 				if (!this._keepExpand) this.compact();

@@ -16,6 +16,7 @@ var $plugins =
 {"name":"DTextPicture","status":true,"description":"動的文字列ピクチャ生成プラグイン","parameters":{}},
 {"name":"ChatLog","status":true,"description":"チャットログを保持し、発言を動画風に流します。","parameters":{}},
 {"name":"EventReSpawn","status":true,"description":"イベント動的生成プラグイン","parameters":{}},
+{"name":"HyperLink","status":true,"description":"ゲーム中に外部ページへのリンクを貼ります。","parameters":{"description":"Webサイトへのリンク"}},
 {"name":"DebugMonitor","status":true,"description":"スイッチ・変数の状態を画面上にリアルタイム表示します。","parameters":{"monitorX":"0","monitorY":"0","monitorW":"240"}},
 {"name":"OnlineAvatar","status":true,"description":"Firebaseを使ってプレイヤーをオンライン同期します。","parameters":{"apiKey":"AIzaSyAWDSEz4nO26q4VfuWWY65lAl5D_A0eb5w","authDomain":"mosimosido.firebaseapp.com","databaseURL":"https://mosimosido.firebaseio.com","avatarEvent":"1","syncSwitchStart":"11","syncSwitchEnd":"20","syncVariableStart":"11","syncVariableEnd":"20"}},
 {"name":"QuickMove","status":true,"description":"歩行とジャンプを軽快に(2000風に)します。","parameters":{}},
