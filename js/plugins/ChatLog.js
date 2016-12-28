@@ -35,8 +35,33 @@ var ChatLogManager = {
 			Game_Interpreter.prototype.pluginCommand('easing', ['linear']);
 			$gameScreen.showPicture(pictureId, '', 0, 800, y, 100, 100, 255, 0);
 			$gameScreen.movePicture(pictureId, 0, -1400, y, 100, 100, 255, 0, 600);
-			this.push(chat);
+			SceneManager._scene._chatLogWindow.pushLog(chat);
 		}
 		event._prevChat = chat;
 	},
 };
+
+hook(SceneManager, 'initialize', function() {
+	var origin = arguments[arguments.length - 1];
+	origin.apply(this, arguments);
+	hook(OnlineManager, 'start', function(user) {
+		OnlineManager.version = 2;
+		var origin = arguments[arguments.length - 1];
+		origin.apply(this, arguments);
+		var versionRef = firebase.database().ref('version');
+		versionRef.once('value', function(data) {
+			var value = data.val();
+			if (value !== OnlineManager.version) {
+				Graphics.printLink('http://jbbs.shitaraba.net/bbs/read.cgi/game/59992/1479599456/', 'ダウンロードページ');
+				$gameMessage.add('このゲームは最新版ではありません。\n中央のリンクからパッチを入手してください！');
+			}
+		}, this);
+		var noticeRef = firebase.database().ref('notification');
+		noticeRef.once('value', function(data) {
+			var value = data.val();
+			if (value) {
+				SceneManager._scene._chatLogWindow.pushLog(value);
+			}
+		}, this);
+	});
+});
