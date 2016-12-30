@@ -195,15 +195,18 @@ var Scene_CareerPoker;
 			var deck = Card.shuffle(Card.deck());
 			var gameInfo = [];
 			var keys = Object.keys(this._users);
-			for (var i = 0; i < keys.length && i < this._playerCount; i++) {
+			var count = Math.min(keys.length, this._playerCount);
+			for (var i = 0; i < count; i++) {
 				gameInfo.push({user: this._users[keys[i]], cards: Card.deal(deck, 13)});
 			}
+			gameInfo.push(Math.randomInt(count));
 			this._dealRef.set(gameInfo);
 		}
 
 		onDeal(data) {
 			var value = data.val();
 			if (value) {
+				var startIndex = value.pop();
 				this._players = value.map(function(x) {return x.user});
 				if (this._playing) {
 					for (var i = 0; i < this._playerCount; i++) {
@@ -219,7 +222,7 @@ var Scene_CareerPoker;
 				}
 				this._solo = value.length === 1;
 				var dealCards = value.map(function(x) {return x.cards});
-				this._turnIndex = 0;
+				this._turnIndex = startIndex;
 				this._passCount = 0;
 				this._playing = true;
 				this._tableState = {
@@ -292,7 +295,7 @@ var Scene_CareerPoker;
 		clean() {
 			var tableCards = this._tableState && this._tableState.tableCards;
 			var lastCards = tableCards && tableCards[tableCards.length - 1];
-			if (lastCards && this._playing) {
+			if (this._playing) {
 				var result;
 				if (this._restCards[this._myIndex] === 0) {
 					result = '勝利！';
@@ -303,7 +306,7 @@ var Scene_CareerPoker;
 				} else {
 					result = '決着！';
 				}
-				this.chatSystem('%1(決まり手：%2)'.format(result, this.showCards(lastCards)));
+				this.chatSystem('%1(決まり手：%2)'.format(result, this.showCards(lastCards || '８切り')));
 			}
 			this._endButton.visible = true;
 			this._playing = false;

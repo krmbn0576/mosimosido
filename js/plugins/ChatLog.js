@@ -45,7 +45,7 @@ hook(SceneManager, 'initialize', function() {
 	var origin = arguments[arguments.length - 1];
 	origin.apply(this, arguments);
 	hook(OnlineManager, 'start', function(user) {
-		OnlineManager.version = 2;
+		OnlineManager.version = 3;
 		var origin = arguments[arguments.length - 1];
 		origin.apply(this, arguments);
 		var versionRef = firebase.database().ref('version');
